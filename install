@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+#
+# DESCRIPTION
+#
+
+# https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail/
+# -e            Exit immediately when a command fails
+# -u            Treat unset variables as an error
+# -x            Print each command before executing it
+# -o pipefail   Sets the exit code of a pipeline to that of the rightmost 
+#               command to exit with a non-zero status, or to zero if all 
+#               commands of the pipeline exit successfully
+set -euxo pipefail
+
+# Any subsequent scripts that are called should be source using a path relative
+# to that of this script. Often not used, but a good idea to keep around, so
+# let's ignore any shellcheck unused variable warnings.
+# See https://www.shellcheck.net/wiki/SC2034
+# shellcheck disable=SC2034
+script_dir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+
+# Create a simple SQLite3 database
+sqlite3 todoapp.db < ./todo.dbml.sql
+
+# Compile TailwindCSS
+npx tailwindcss -i ./src/css/main.css -o ./www/assets/css/main.css
+
+# Build and run the Go HTTP server
+go build -o www/server src/main.go && ./www/server
+
+exit 0

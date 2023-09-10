@@ -1,0 +1,8 @@
+{{ define "_toggle_completed" }}
+
+<div id="toggle-completed" hx-get='/?showcompleted={{ if eq . "ALL" }}false{{ else }}true{{end}}' hx-target="#todo-list"
+    hx-swap="innerhtml" hx-swap-oob="true" class="cursor-pointer text-right">
+    {{ if eq . "ALL" }}Hide{{ else }}Show{{end}} Completed
+</div>
+
+{{ end }}

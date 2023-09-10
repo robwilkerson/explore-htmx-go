@@ -1,0 +1,28 @@
+{{ define "_list" }}
+    <ul id="todo-list">
+        {{ range . }}
+            {{ block "todo-task" . }}
+                <li class="flex p-2 border-b-2 border-slate-200">
+                    <div class="flex-initial px-2 pb-1">
+                        <input
+                            type="hidden"
+                            name="id"
+                            id="task{{ .Id }}"
+                            value="{{ .Id }}"
+                        />
+                        <input
+                            type="checkbox"
+                            name="completed"
+                            hx-trigger="change"
+                            hx-patch="/todos/complete"
+                            hx-include="#task{{ .Id }}"
+                            class="scale-150 rounded"
+                            {{ if .Complete }}checked{{ end }}
+                        />
+                    </div>
+                    <div class="flex-grow pl-3">{{ .Task }}</div>
+                </li>
+            {{ end }}
+        {{ end }}
+    </ul>
+{{ end }}

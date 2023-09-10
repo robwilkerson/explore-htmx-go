@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://unpkg.com/hyperscript.org@0.9.11"></script>
+    <script
+      src="https://unpkg.com/htmx.org@1.9.5"
+      integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO"
+      crossorigin="anonymous"
+    ></script>
+    <link href="/assets/css/main.css" rel="stylesheet" />
+    <title>Stuff to Do!</title>
+  </head>
+
+  <body class="p-10">
+    <h1 class="text-2xl">To Do</h1>
+
+    <form
+      hx-post="/todos"
+      hx-target="#todo-list"
+      hx-swap="beforeend"
+      _="on htmx:afterRequest reset() me"
+      class="flex p-2 my-10"
+    >
+      <label class="flex-initial px-2 mt-2">
+        <input
+          type="checkbox"
+          class="scale-150 rounded bg-gray-500 border-gray-800"
+          disabled
+        />
+      </label>
+      <label class="px-2 flex-grow">
+        <input
+          type="text"
+          name="task"
+          class="w-full p-2 border border-gray-400"
+        />
+      </label>
+      <button
+        type="submit"
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
+      >
+        Save
+      </button>
+    </form>
+
+    {{ template "_toggle_completed" .View }} {{ template "_list" .Tasks }}
+  </body>
+</html>
