@@ -1,6 +1,6 @@
 module todohtmx
 
-go 1.21.0
+go 1.19
 
 require (
 	github.com/google/uuid v1.3.1 // direct

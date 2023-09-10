@@ -7,8 +7,8 @@
 # -e            Exit immediately when a command fails
 # -u            Treat unset variables as an error
 # -x            Print each command before executing it
-# -o pipefail   Sets the exit code of a pipeline to that of the rightmost 
-#               command to exit with a non-zero status, or to zero if all 
+# -o pipefail   Sets the exit code of a pipeline to that of the rightmost
+#               command to exit with a non-zero status, or to zero if all
 #               commands of the pipeline exit successfully
 set -euxo pipefail
 
@@ -20,10 +20,16 @@ set -euxo pipefail
 script_dir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 # Create a simple SQLite3 database
-sqlite3 todoapp.db < ./todo.dbml.sql
+sqlite3 todoapp.db <./todo.dbml.sql
+
+# Install dependencies
+(cd ./src && go install)
+npm i
 
 # Compile TailwindCSS
 npx tailwindcss -i ./src/css/main.css -o ./www/assets/css/main.css
+
+echo "Open your browser to  http://localhost:8888..."
 
 # Build and run the Go HTTP server
 go build -o www/server src/main.go && ./www/server

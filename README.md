@@ -6,9 +6,8 @@ This is a functional prototype. It is not, nor does it pretend to be, production
 
 ## Pre-requisites
 
-* Go 1.21 (earlier versions _might_ be fine as well)
+* Go 1.19 or better
 * SQLite3
-* Tailwind CSS
 
 ## Installation
 
