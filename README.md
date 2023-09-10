@@ -12,6 +12,6 @@ This is a functional prototype. It is not, nor does it pretend to be, production
 ## Installation
 
 1. Clone this repo
-2. Run the install script
+2. Run the install script from the project root
 
         bash ./install
