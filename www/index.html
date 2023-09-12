@@ -53,7 +53,7 @@
       {{ end }}
 
       {{ block "_view-toggle" . }}
-        <div id="toggle-completed" hx-get="/?showcompleted={{ if eq .Filter "ALL" }}false{{ else }}true{{ end }}"
+        <div id="toggle-completed" hx-get="/todos/show/{{ if eq .Filter "ALL" }}INCOMPLETE{{ else }}ALL{{ end }}"
           hx-target="#todo-list" hx-swap="innerhtml" hx-swap-oob="true"
           class="flex-grow {{ if eq .Count 0 }}hidden{{ end }} cursor-pointer text-right">
           {{ if eq .Filter "ALL" }}Hide{{ else }}Show{{ end }} Completed

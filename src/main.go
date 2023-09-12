@@ -14,16 +14,18 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+type ListFilter string
+
 const (
-	ALL        string = "ALL"
-	INCOMPLETE        = "INCOMPLETE"
+	ALL        ListFilter = "ALL"
+	INCOMPLETE ListFilter = "INCOMPLETE"
 )
 
 const (
 	NoTasksMsg string = "_no-tasks"
-	ViewToggle        = "_view-toggle"
-	TaskList          = "_list"
-	TaskItem          = "_todo-task"
+	ViewToggle string = "_view-toggle"
+	TaskList   string = "_list"
+	TaskItem   string = "_todo-task"
 )
 
 type Todo struct {
@@ -41,16 +43,16 @@ func DBConn() *sql.DB {
 	return db
 }
 
-func TaskCount(db *sql.DB, filter string) int {
-	sqlStr := "SELECT COUNT(*) FROM todos"
-	if filter != ALL {
-		sqlStr = "SELECT COUNT(*) FROM todos WHERE completed = false"
+func TaskCount(db *sql.DB, f ListFilter) int {
+	qry := "SELECT COUNT(*) FROM todos"
+	if f != ALL {
+		qry = "SELECT COUNT(*) FROM todos WHERE completed = false"
 	}
 
 	// See how many we have; if we just created the first, we need to also
 	// remove the empty message
 	var count int
-	sql, _ := db.Prepare(sqlStr)
+	sql, _ := db.Prepare(qry)
 	sql.QueryRow().Scan(&count)
 
 	return count
@@ -65,15 +67,10 @@ func main() {
 	tmpls := template.Must(template.ParseGlob("www/*.html"))
 
 	// Helpers
-	updateActionBlocks := func(w http.ResponseWriter, db *sql.DB, filter string) {
-		taskCount := TaskCount(db, ALL)
-		fmt.Printf("Executing %s with:\n", NoTasksMsg)
-		fmt.Printf("   taskCount: %d\n", taskCount)
+	updateActionBlocks := func(w http.ResponseWriter, db *sql.DB, filter ListFilter) {
+		taskCount := TaskCount(db, filter)
 		tmpls.ExecuteTemplate(w, NoTasksMsg, map[string]int{"Count": taskCount})
-
-		fmt.Printf("Executing %s with:\n", ViewToggle)
-		fmt.Printf("   data: %v\n", map[string]any{"Filter": ALL, "Count": taskCount})
-		tmpls.ExecuteTemplate(w, ViewToggle, map[string]any{"Filter": ALL, "Count": taskCount})
+		tmpls.ExecuteTemplate(w, ViewToggle, map[string]any{"Filter": filter, "Count": taskCount})
 	}
 
 	deleteTask := func(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +99,7 @@ func main() {
 		fmt.Printf("   ID: %s\n", id)
 
 		qsValues := r.URL.Query()
-		completed, err := strconv.ParseBool(qsValues["completed"][0])
+		completed, _ := strconv.ParseBool(qsValues["completed"][0])
 
 		db := DBConn()
 		sql, err := db.Prepare("UPDATE todos SET completed = ?, updated_at = ? WHERE id = ?")
@@ -117,38 +114,11 @@ func main() {
 		// showing an item that's marked completed
 	}
 
-	filteredList := func(w http.ResponseWriter, showCompleted bool) {
-		var record Todo
-		var data []Todo
-
-		qry := "SELECT id, task, completed FROM todos"
-		if !showCompleted {
-			qry = "SELECT id, task, completed FROM todos WHERE completed = false;"
-			// data.View = INCOMPLETE
-		}
-
-		db := DBConn()
-		records, _ := db.Query(qry)
-		for records.Next() {
-			records.Scan(&record.Id, &record.Task, &record.Complete)
-			data = append(data, record)
-		}
-
-		tmpls.ExecuteTemplate(w, "_toggle_completed", data)
-		tmpls.ExecuteTemplate(w, "_list", data)
-	}
-
 	//
 	// Route handlers
 	//
 
 	indexHandler := func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("HX-Request") == "true" {
-			show, _ := strconv.ParseBool(r.URL.Query().Get("showcompleted"))
-			filteredList(w, show)
-			return
-		}
-
 		var record Todo
 		var data []Todo
 
@@ -158,9 +128,6 @@ func main() {
 			records.Scan(&record.Id, &record.Task, &record.Complete)
 			data = append(data, record)
 		}
-
-		fmt.Println("Executing index.html with:")
-		fmt.Printf("   data.Tasks: %v\n", data)
 
 		tmpls.ExecuteTemplate(w, "index.html", map[string]any{"Tasks": data, "Filter": ALL, "Count": len(data)})
 	}
@@ -194,9 +161,37 @@ func main() {
 		}
 	}
 
+	filteredViewHandler := func(w http.ResponseWriter, r *http.Request) {
+		// /todos/show/:filter ViewFilter
+
+		var record Todo
+		var data []Todo
+		show := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:] // (ALL|INCOMPLETE)
+
+		qry := "SELECT id, task, completed FROM todos"
+		if ListFilter(show) == INCOMPLETE {
+			qry = qry + " WHERE completed = false"
+		}
+
+		db := DBConn()
+		records, _ := db.Query(qry)
+		for records.Next() {
+			records.Scan(&record.Id, &record.Task, &record.Complete)
+			data = append(data, record)
+		}
+
+		// Reload the task list with the filtered results
+		tmpls.ExecuteTemplate(w, TaskList, map[string]any{"Tasks": data})
+
+		// Update the calls to action as required
+		// I.e., show/hide the no tasks message, show/hide the filter toggle
+		updateActionBlocks(w, db, ListFilter(show))
+	}
+
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/todos", createHandler)
 	http.HandleFunc("/todos/", updatesHandler)
+	http.HandleFunc("/todos/show/", filteredViewHandler)
 
 	fmt.Println("Starting HTTP server on :8888...")
 	log.Fatal(http.ListenAndServe(":8888", nil))
