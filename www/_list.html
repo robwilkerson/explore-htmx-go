@@ -1,7 +1,7 @@
 {{ define "_list" }}
-    <ul id="todo-list">
-        {{ range . }}
-            {{ block "todo-task" . }}
+    <ul id="todo-list" class="block">
+        {{ range .Tasks }}
+            {{ block "_todo-task" . }}
                 <li class="flex p-2 border-b-2 border-slate-200">
                     <div class="flex-initial px-2 pb-1">
                         <input
@@ -14,13 +14,13 @@
                             type="checkbox"
                             name="completed"
                             hx-trigger="change"
-                            hx-patch="/todos/complete"
-                            hx-include="#task{{ .Id }}"
+                            hx-patch="/todos/{{ .Id }}?completed={{ if .Complete }}false{{ else }}true{{ end }}"
                             class="scale-150 rounded"
                             {{ if .Complete }}checked{{ end }}
                         />
                     </div>
                     <div class="flex-grow pl-3">{{ .Task }}</div>
+                    <div hx-delete="/todos/{{ .Id }}" hx-target="closest li" hx-swap="outerHTML" class="flex-shrink text-red-600 cursor-pointer">&#10008;</div>
                 </li>
             {{ end }}
         {{ end }}
