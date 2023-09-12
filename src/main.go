@@ -161,6 +161,9 @@ func main() {
 		}
 	}
 
+	/**
+	 * TODO: Set a cookie for the current state
+	 */
 	filteredViewHandler := func(w http.ResponseWriter, r *http.Request) {
 		// /todos/show/:filter ViewFilter
 
