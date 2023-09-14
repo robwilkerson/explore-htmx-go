@@ -20,8 +20,9 @@ set -euxo pipefail
 script_dir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 echo "Setting environment variables..."
-cp .envrc.example .envrc
-direnv allow .
+cp .envrc.example .envrc && direnv allow .
+
+sleep 1
 
 echo "Installing the SQLite database..."
 sqlite3 todoapp.db <./todo.dbml.sql
