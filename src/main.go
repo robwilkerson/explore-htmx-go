@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
@@ -43,19 +44,19 @@ func DBConn() *sql.DB {
 	return db
 }
 
-func TaskCount(db *sql.DB, f ListFilter) int {
+func TaskCount(db *sql.DB) map[string]int {
 	qry := "SELECT COUNT(*) FROM todos"
-	if f != ALL {
-		qry = "SELECT COUNT(*) FROM todos WHERE completed = false"
-	}
 
-	// See how many we have; if we just created the first, we need to also
-	// remove the empty message
-	var count int
+	var totalCount int
 	sql, _ := db.Prepare(qry)
-	sql.QueryRow().Scan(&count)
+	sql.QueryRow().Scan(&totalCount)
 
-	return count
+	incompleteCount := totalCount
+	qry = "SELECT COUNT(*) FROM todos WHERE completed = false"
+	sql, _ = db.Prepare(qry)
+	sql.QueryRow().Scan(&incompleteCount)
+
+	return map[string]int{"total": totalCount, "incomplete": incompleteCount}
 }
 
 func main() {
@@ -66,11 +67,22 @@ func main() {
 	// Parse HTML templates
 	tmpls := template.Must(template.ParseGlob("www/*.html"))
 
+	//
 	// Helpers
-	updateActionBlocks := func(w http.ResponseWriter, db *sql.DB, filter ListFilter) {
-		taskCount := TaskCount(db, filter)
-		tmpls.ExecuteTemplate(w, NoTasksMsg, map[string]int{"Count": taskCount})
-		tmpls.ExecuteTemplate(w, ViewToggle, map[string]any{"Filter": filter, "Count": taskCount})
+	//
+
+	updateActionBlocks := func(w http.ResponseWriter, db *sql.DB, f ListFilter) {
+		taskCount := TaskCount(db)
+		tmpls.ExecuteTemplate(w, NoTasksMsg, map[string]map[string]int{"Count": taskCount})
+		tmpls.ExecuteTemplate(w, ViewToggle, map[string]any{"Filter": f, "Count": taskCount})
+	}
+
+	// updateActionBlocksFromState is called when we can trust the cookie value
+	updateActionBlocksFromState := func(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+		// Find out what we're displaying
+		filter, _ := r.Cookie("ListFilter")
+
+		updateActionBlocks(w, db, ListFilter(filter.Value))
 	}
 
 	deleteTask := func(w http.ResponseWriter, r *http.Request) {
@@ -83,7 +95,7 @@ func main() {
 
 		// Update the calls to action as required
 		// I.e., show/hide the no tasks message, show/hide the filter toggle
-		updateActionBlocks(w, db, ALL)
+		updateActionBlocksFromState(w, r, db)
 	}
 
 	patchTask := func(w http.ResponseWriter, r *http.Request) {
@@ -96,7 +108,7 @@ func main() {
 
 		// Extract the :id parameter from the path
 		id := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
-		fmt.Printf("   ID: %s\n", id)
+		fmt.Printf("Updating task %s\n", id)
 
 		qsValues := r.URL.Query()
 		completed, _ := strconv.ParseBool(qsValues["completed"][0])
@@ -109,9 +121,11 @@ func main() {
 		}
 		sql.Exec(completed, time.Now(), id)
 
-		// No need to update any templates right now, but once we have a
-		// persistent view state, we might need to decide whether we keep
-		// showing an item that's marked completed
+		// TODO: If the FilterView is INCOMPLETE and we just marked the last
+		// INCOMPLETE task as COMPLETED then this row should be hidden in order
+		// to align with the selected filter
+
+		updateActionBlocksFromState(w, r, db)
 	}
 
 	//
@@ -122,14 +136,46 @@ func main() {
 		var record Todo
 		var data []Todo
 
+		if r.URL.Path != "/" {
+			fmt.Printf("%s requested, 404 returned\n", r.URL.Path)
+			http.Error(w, "Not Found", 404)
+			return
+		}
+
+		// Check/Set a cookie with the current view of the list; default to ALL
+		cookie, err := r.Cookie("ListFilter")
+		if err != nil {
+			if errors.Is(err, http.ErrNoCookie) {
+				fmt.Printf("%s No ListFilter cookie found in the request\n", r.URL.Path)
+				// set cookie
+				cookie = &http.Cookie{
+					Name:   "ListFilter",
+					Value:  string(ALL),
+					Path:   "/",
+					MaxAge: 86400,
+				}
+				fmt.Printf("%s Setting ListFilter cookie: %s\n", r.URL.Path, cookie.Value)
+				http.SetCookie(w, cookie)
+			} else {
+				// Fatal
+				fmt.Println(err)
+				http.Error(w, "Server error reading cookie", http.StatusInternalServerError)
+			}
+		}
+
+		qry := "SELECT id, task, completed FROM todos"
+		if ListFilter(cookie.Value) == INCOMPLETE {
+			qry = qry + " WHERE completed = false"
+		}
+
 		db := DBConn()
-		records, _ := db.Query("SELECT id, task, completed FROM todos;")
+		records, _ := db.Query(qry)
 		for records.Next() {
 			records.Scan(&record.Id, &record.Task, &record.Complete)
 			data = append(data, record)
 		}
 
-		tmpls.ExecuteTemplate(w, "index.html", map[string]any{"Tasks": data, "Filter": ALL, "Count": len(data)})
+		tmpls.ExecuteTemplate(w, "index.html", map[string]any{"Tasks": data, "Filter": cookie.Value, "Count": TaskCount(db)})
 	}
 
 	createHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -149,7 +195,7 @@ func main() {
 
 		// Update the calls to action as required
 		// I.e., show/hide the no tasks message, show/hide the filter toggle
-		updateActionBlocks(w, db, ALL)
+		updateActionBlocksFromState(w, r, db)
 	}
 
 	updatesHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -161,9 +207,6 @@ func main() {
 		}
 	}
 
-	/**
-	 * TODO: Set a cookie for the current state
-	 */
 	filteredViewHandler := func(w http.ResponseWriter, r *http.Request) {
 		// /todos/show/:filter ViewFilter
 
@@ -176,6 +219,7 @@ func main() {
 			qry = qry + " WHERE completed = false"
 		}
 
+		// Fetch the records matching the ListFilter
 		db := DBConn()
 		records, _ := db.Query(qry)
 		for records.Next() {
@@ -183,12 +227,22 @@ func main() {
 			data = append(data, record)
 		}
 
+		// Update the cookie with the new ListFilter value
+		cookie := &http.Cookie{
+			Name:   "ListFilter",
+			Value:  show,
+			Path:   "/",
+			MaxAge: 86400,
+		}
+		fmt.Printf("%s Setting ListFilter cookie: %s\n", r.URL.Path, cookie.Value)
+		http.SetCookie(w, cookie)
+
 		// Reload the task list with the filtered results
 		tmpls.ExecuteTemplate(w, TaskList, map[string]any{"Tasks": data})
 
 		// Update the calls to action as required
 		// I.e., show/hide the no tasks message, show/hide the filter toggle
-		updateActionBlocks(w, db, ListFilter(show))
+		updateActionBlocks(w, db, ListFilter(cookie.Value))
 	}
 
 	http.HandleFunc("/", indexHandler)

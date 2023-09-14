@@ -47,7 +47,7 @@
 
     <div class="flex">
       {{ block "_no-tasks" . }}
-        <div id="no-tasks" hx-swap-oob="true" class="flex-initial {{ if gt .Count 0}}hidden{{ end }}">
+        <div id="no-tasks" hx-swap-oob="true" class="flex-initial {{ if gt (index .Count "incomplete") 0 }}hidden{{ end }}">
           Congratulations, you have nothing to do!
         </div>
       {{ end }}
@@ -55,7 +55,7 @@
       {{ block "_view-toggle" . }}
         <div id="toggle-completed" hx-get="/todos/show/{{ if eq .Filter "ALL" }}INCOMPLETE{{ else }}ALL{{ end }}"
           hx-target="#todo-list" hx-swap="innerhtml" hx-swap-oob="true"
-          class="flex-grow {{ if eq .Count 0 }}hidden{{ end }} cursor-pointer text-right">
+          class="flex-grow {{ if eq (index .Count "total") 0 }}hidden{{ end }} cursor-pointer text-right">
           {{ if eq .Filter "ALL" }}Hide{{ else }}Show{{ end }} Completed
         </div>
       {{ end }}
