@@ -34,6 +34,6 @@ go install github.com/cortesi/modd/cmd/modd@latest
 
 # Start the application and watch for changes
 echo "Starting the application..."
-direnv allow . && modd
+modd
 
 exit 0
