@@ -15,9 +15,9 @@ Huge hat tip to the [Golang app skeleton](https://adhoc.team/2021/03/29/simple-w
 ## Installation
 
 1. Clone this repo
-2. Install the environment variables
+2. Install the environment variables; this cannot be done from the install script because the script has no access to the operating shell environment (this trips me up more often than I'd like to admit)
 
-        direnv allow .
+        cp .envrc.example .envrc && direnv allow .
 
 3. Run the install script from the project root
 

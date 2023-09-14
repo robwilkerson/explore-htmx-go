@@ -19,9 +19,6 @@ set -euxo pipefail
 # shellcheck disable=SC2034
 script_dir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
-echo "Setting environment variables..."
-cp .envrc.example .envrc
-
 echo "Installing the SQLite database..."
 sqlite3 todoapp.db <./todo.dbml.sql
 
