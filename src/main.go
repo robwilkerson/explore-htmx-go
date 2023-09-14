@@ -71,6 +71,25 @@ func main() {
 	// Helpers
 	//
 
+	getTasks := func(db *sql.DB, f ListFilter) []Todo {
+		var record Todo
+		var tasks []Todo
+
+		qry := "SELECT id, task, completed FROM todos"
+		if f == INCOMPLETE {
+			qry = qry + " WHERE completed = false"
+		}
+
+		// Fetch the records matching the ListFilter
+		records, _ := db.Query(qry)
+		for records.Next() {
+			records.Scan(&record.Id, &record.Task, &record.Complete)
+			tasks = append(tasks, record)
+		}
+
+		return tasks
+	}
+
 	updateActionBlocks := func(w http.ResponseWriter, db *sql.DB, f ListFilter) {
 		taskCount := TaskCount(db)
 		tmpls.ExecuteTemplate(w, NoTasksMsg, map[string]map[string]int{"Count": taskCount})
@@ -108,10 +127,11 @@ func main() {
 
 		// Extract the :id parameter from the path
 		id := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
-		fmt.Printf("Updating task %s\n", id)
 
 		qsValues := r.URL.Query()
 		completed, _ := strconv.ParseBool(qsValues["completed"][0])
+
+		fmt.Printf("%s Updating task %s to completed status of %t\n", r.URL.Path, id, completed)
 
 		db := DBConn()
 		sql, err := db.Prepare("UPDATE todos SET completed = ?, updated_at = ? WHERE id = ?")
@@ -121,9 +141,13 @@ func main() {
 		}
 		sql.Exec(completed, time.Now(), id)
 
-		// TODO: If the FilterView is INCOMPLETE and we just marked the last
-		// INCOMPLETE task as COMPLETED then this row should be hidden in order
-		// to align with the selected filter
+		// If displaying INCOMPLETE only, but marking this complete, we need to
+		// adjust re-render the display
+		c, _ := r.Cookie("ListFilter")
+		if ListFilter(c.Value) == INCOMPLETE && completed {
+			fmt.Printf("%s Updating the task list", r.URL.Path)
+			tmpls.ExecuteTemplate(w, TaskList, map[string]any{"Tasks": getTasks(db, ListFilter(c.Value))})
+		}
 
 		updateActionBlocksFromState(w, r, db)
 	}
@@ -210,22 +234,9 @@ func main() {
 	filteredViewHandler := func(w http.ResponseWriter, r *http.Request) {
 		// /todos/show/:filter ViewFilter
 
-		var record Todo
-		var data []Todo
-		show := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:] // (ALL|INCOMPLETE)
-
-		qry := "SELECT id, task, completed FROM todos"
-		if ListFilter(show) == INCOMPLETE {
-			qry = qry + " WHERE completed = false"
-		}
-
-		// Fetch the records matching the ListFilter
 		db := DBConn()
-		records, _ := db.Query(qry)
-		for records.Next() {
-			records.Scan(&record.Id, &record.Task, &record.Complete)
-			data = append(data, record)
-		}
+		show := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:] // (ALL|INCOMPLETE)
+		data := getTasks(db, ListFilter(show))
 
 		// Update the cookie with the new ListFilter value
 		cookie := &http.Cookie{

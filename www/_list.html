@@ -1,5 +1,5 @@
 {{ define "_list" }}
-    <ul id="todo-list" class="block">
+    <ul id="todo-list" class="block" hx-swap-oob="true">
         {{ range .Tasks }}
             {{ block "_todo-task" . }}
                 <li class="flex p-2 border-b-2 border-slate-200">
