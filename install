@@ -19,19 +19,22 @@ set -euxo pipefail
 # shellcheck disable=SC2034
 script_dir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
-# Create a simple SQLite3 database
+echo "Setting environment variables..."
+cp .envrc.example .envrc
+direnv allow .
+
+echo "Installing the SQLite database..."
 sqlite3 todoapp.db <./todo.dbml.sql
 
-# Install dependencies
+echo "Installing Tailwind CSS and its dependencies..."
 (cd ./src && go install)
 npm i
 
-# Compile TailwindCSS
-npx tailwindcss -i ./src/css/main.css -o ./www/assets/css/main.css
+echo "Installing modd to watch the filesystem and trigger actions when key files are modified..."
+go install github.com/cortesi/modd/cmd/modd@latest
 
-echo "Open your browser to  http://localhost:8888..."
-
-# Build and run the Go HTTP server
-go build -o www/server src/main.go && ./www/server
+# Start the application and watch for changes
+echo "Starting the application..."
+modd
 
 exit 0

@@ -9,7 +9,7 @@
       integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO"
       crossorigin="anonymous"
     ></script>
-    <link href="/assets/css/main.css" rel="stylesheet" />
+    <link href="{{ .App.StaticBase }}/css/main.css" rel="stylesheet" />
     <title>Stuff to Do!</title>
   </head>
 
@@ -47,16 +47,16 @@
 
     <div class="flex">
       {{ block "_no-tasks" . }}
-        <div id="no-tasks" hx-swap-oob="true" class="flex-initial {{ if gt (index .Count "incomplete") 0 }}hidden{{ end }}">
+        <div id="no-tasks" hx-swap-oob="true" class="flex-initial {{ if gt .Count.Incomplete 0 }}hidden{{ end }}">
           Congratulations, you have nothing to do!
         </div>
       {{ end }}
 
       {{ block "_view-toggle" . }}
-        <div id="toggle-completed" hx-get="/todos/show/{{ if eq .Filter "ALL" }}INCOMPLETE{{ else }}ALL{{ end }}"
+        <div id="toggle-completed" hx-get="/todos/show/{{ if eq .Show "ALL" }}INCOMPLETE{{ else }}ALL{{ end }}"
           hx-target="#todo-list" hx-swap="innerhtml" hx-swap-oob="true"
-          class="flex-grow {{ if eq (index .Count "total") 0 }}hidden{{ end }} cursor-pointer text-right">
-          {{ if eq .Filter "ALL" }}Hide{{ else }}Show{{ end }} Completed
+          class="flex-grow {{ if eq .Count.Total 0 }}hidden{{ end }} cursor-pointer text-right">
+          {{ if eq .Show "ALL" }}Hide{{ else }}Show{{ end }} Completed
         </div>
       {{ end }}
     </div>

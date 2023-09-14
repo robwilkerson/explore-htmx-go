@@ -4,7 +4,9 @@ node_modules/
 www/assets/css
 
 # The Go binary
-www/server
+todoapp
 
 # The SQLite database
 *.db
+
+.envrc
