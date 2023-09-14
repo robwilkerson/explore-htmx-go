@@ -1,4 +1,2 @@
-#!/usr/bin/env bash
-
 export PORT=8888
 export STATIC_BASE=/assets

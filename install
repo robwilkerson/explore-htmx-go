@@ -21,7 +21,6 @@ script_dir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 echo "Setting environment variables..."
 cp .envrc.example .envrc
-sleep 5
 direnv allow .
 
 sleep 1
