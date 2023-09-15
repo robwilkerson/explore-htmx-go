@@ -11,6 +11,9 @@ Huge hat tip to the [Golang app skeleton](https://adhoc.team/2021/03/29/simple-w
 * Go 1.19 or better
 * SQLite3
 * [direnv](https://direnv.net)
+* [modd](https://github.com/cortesi/modd)
+
+        go install github.com/cortesi/modd/cmd/modd@latest
 
 ## Installation
 

@@ -26,9 +26,6 @@ echo "Installing dependencies..."
 go install
 npm i
 
-echo "Installing modd to watch the filesystem and trigger actions when key files are modified..."
-go install github.com/cortesi/modd/cmd/modd@latest
-
 # Start the application and watch for changes
 echo "Starting the application..."
 modd
