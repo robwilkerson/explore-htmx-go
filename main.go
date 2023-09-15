@@ -279,7 +279,6 @@ func getCounts(db *sql.DB) TaskCount {
 func updateSwapsFromState(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	filter, _ := r.Cookie("View")
 
-	log.Printf("Current list filter is %s", filter.Value)
 	updateSwaps(w, db, View(filter.Value))
 }
 
@@ -294,8 +293,6 @@ func updateSwaps(w http.ResponseWriter, db *sql.DB, v View) {
 	}
 	data.Show = v
 	data.Count = getCounts(db)
-
-	log.Printf("Updating the toggle to %s", string(data.Show))
 
 	renderTemplate(w, string(NoTasksMsg), data)
 	renderTemplate(w, string(ViewToggle), data)

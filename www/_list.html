@@ -1,8 +1,8 @@
 {{ define "_list" }}
-    <ul id="todo-list" class="block" hx-swap-oob="true">
+    <ul id="todo-list" class="block mt-2" hx-swap-oob="true">
         {{ range .Tasks }}
             {{ block "_todo-task" . }}
-                <li class="flex p-2 border-b-2 border-slate-200">
+                <li class="flex p-2 border-b-2 border-gray-400">
                     <div class="flex-initial px-2 pb-1">
                         <input
                             type="hidden"
@@ -19,7 +19,7 @@
                             {{ if .Complete }}checked{{ end }}
                         />
                     </div>
-                    <div class="flex-grow pl-3">{{ .Task }}</div>
+                    <div class="flex-grow pl-3 text-gray-200">{{ .Task }}</div>
                     <div hx-delete="/todos/{{ .Id }}" hx-target="closest li" hx-swap="outerHTML" class="flex-shrink text-red-600 cursor-pointer">&#10008;</div>
                 </li>
             {{ end }}

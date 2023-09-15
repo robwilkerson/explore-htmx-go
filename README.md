@@ -1,6 +1,6 @@
 # Todo List
 
-An exploration of Go templates and HTMLX.
+An exploration of [Go templates](https://pkg.go.dev/text/template), [HTMLX](https://htmx.org/docs/#triggers), and just a touch of [hyperscript](https://hyperscript.org).
 
 This is a functional prototype. It is not, nor does it pretend to be, production-ready code.
 

@@ -13,8 +13,8 @@
     <title>Stuff to Do!</title>
   </head>
 
-  <body class="p-10">
-    <h1 class="text-2xl font-extrabold">To Do</h1>
+  <body class="p-10 bg-slate-800">
+    <h1 class="text-gray-300 text-2xl font-extrabold">To Do</h1>
 
     <form
       hx-post="/todos"
@@ -26,7 +26,7 @@
       <label class="flex-initial px-2 mt-2">
         <input
           type="checkbox"
-          class="scale-150 rounded bg-gray-500 border-gray-800"
+          class="scale-150 rounded bg-gray-500 border-gray-200"
           disabled
         />
       </label>
@@ -34,7 +34,8 @@
         <input
           type="text"
           name="task"
-          class="w-full p-2 border border-gray-400"
+          class="w-full p-2 rounded border bg-gray-500 border-gray-200 text-gray-100"
+          placeholder="Something needs doing..."
         />
       </label>
       <button
@@ -47,7 +48,7 @@
 
     <div class="flex">
       {{ block "_no-tasks" . }}
-        <div id="no-tasks" hx-swap-oob="true" class="flex-initial {{ if gt .Count.Incomplete 0 }}hidden{{ end }}">
+        <div id="no-tasks" hx-swap-oob="true" class="flex-initial {{ if gt .Count.Incomplete 0 }}hidden{{ end }} text-gray-200">
           Congratulations, you have nothing to do!
         </div>
       {{ end }}
@@ -55,7 +56,7 @@
       {{ block "_view-toggle" . }}
         <div id="toggle-completed" hx-get="/todos/show/{{ if eq .Show "ALL" }}INCOMPLETE{{ else }}ALL{{ end }}"
           hx-target="#todo-list" hx-swap="innerhtml" hx-swap-oob="true"
-          class="flex-grow {{ if eq .Count.Total 0 }}hidden{{ end }} cursor-pointer text-right">
+          class="flex-grow {{ if eq .Count.Total 0 }}hidden{{ end }} cursor-pointer text-right text-gray-200">
           {{ if eq .Show "ALL" }}Hide{{ else }}Show{{ end }} Completed
         </div>
       {{ end }}
